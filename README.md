@@ -71,15 +71,20 @@ npm run dev   # http://localhost:5173
 ## Producción con Docker / Dokploy
 
 ```bash
-cp .env.example .env   # edita API_KEY, contraseñas, VITE_API_BASE, CORS_ORIGINS
+cp .env.example .env   # edita API_KEY, contraseñas, CORS_ORIGINS
 docker compose up -d --build
-# api  -> :8000   web -> :8080
 ```
 
-En Dokploy: crea la app desde este repo/compose, define las variables de entorno de `.env`,
-y mapea dominios a los servicios `api` (puerto 8000) y `web` (puerto 80 interno). `VITE_API_BASE`
-debe apuntar al dominio público de la API en build-time (ej. `https://api.tudominio.com`), y
-`CORS_ORIGINS` al dominio del frontend. El volumen `fur_data` persiste los JSON crudos; `db_data`
+Un solo dominio: nginx del servicio `web` sirve la SPA y reenvía `/api/` a `api:8000`, así que
+**no hace falta publicar ni exponer la API en otro dominio**. Ningún servicio publica puertos en
+el host; Traefik/Dokploy entra por la red interna.
+
+En Dokploy: crea la app desde este repo/compose, define las variables de entorno de `.env`, y
+mapea el dominio (`grafica.cedac.gov.co`) al servicio **`web`, puerto `80`** — apuntar a 8080 da
+`502 Bad Gateway` porque nginx escucha en el 80. Deja `VITE_API_BASE` **vacío** (si lo pones a
+`http://localhost:8000` el navegador del usuario pedirá a su propia máquina). Solo rellénalo si
+algún día la API vive en otro dominio, y recuerda que es build-time: exige rebuild del servicio
+`web`. Pon `CORS_ORIGINS` al dominio del frontend. El volumen `fur_data` persiste los JSON crudos; `db_data`
 persiste Postgres. Si prefieres usar el Postgres gestionado de Dokploy, elimina el servicio `db`
 del compose y apunta `DATABASE_URL` a esa base.
 
