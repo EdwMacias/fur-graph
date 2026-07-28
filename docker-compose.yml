@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fur}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fur}
+      POSTGRES_DB: ${POSTGRES_DB:-fur}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fur}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fur}:${POSTGRES_PASSWORD:-fur}@db:5432/${POSTGRES_DB:-fur}
+      API_KEY: ${API_KEY:-cambia-esta-clave}
+      DATA_DIR: /data
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    volumes:
+      - fur_data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # En prod, apunta al dominio público de la API (ej. https://api.midominio).
+        VITE_API_BASE: ${VITE_API_BASE:-}
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:
+  fur_data:

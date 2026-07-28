@@ -1,0 +1,16 @@
+# entorno / secretos
+.env
+
+# datos crudos (volumen en prod)
+backend/data/
+data/
+*.db
+
+# python
+__pycache__/
+*.pyc
+
+# node / vite
+frontend/node_modules/
+frontend/dist/
+*.json
