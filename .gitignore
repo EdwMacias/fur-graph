@@ -13,4 +13,3 @@ __pycache__/
 # node / vite
 frontend/node_modules/
 frontend/dist/
-*.json
