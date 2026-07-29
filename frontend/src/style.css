@@ -54,6 +54,8 @@ tbody tr:hover { background: var(--panel-2); }
 }
 .chip.frenos { background: #164e63; color: #a5f3fc; }
 .chip.suspension { background: #3b2f0b; color: #fde68a; }
+.chip.alineacion { background: #14532d; color: #bbf7d0; }
+.chip.ruidos { background: #4c1d95; color: #ddd6fe; }
 
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }

@@ -1,0 +1,47 @@
+[
+  {
+    "IdPrueba": 7333,
+    "BufferRuidoMotor": [
+      {
+        "Fecha": "2026-07-28T08:10:15.9463383-05:00",
+        "NumeroMuestra": 0,
+        "Valor": 71.6
+      },
+      {
+        "Fecha": "2026-07-28T08:10:16.7608637-05:00",
+        "NumeroMuestra": 1,
+        "Valor": 70.9
+      },
+      {
+        "Fecha": "2026-07-28T08:10:17.5644148-05:00",
+        "NumeroMuestra": 2,
+        "Valor": 71.1
+      },
+      {
+        "Fecha": "2026-07-28T08:10:18.3789183-05:00",
+        "NumeroMuestra": 3,
+        "Valor": 70.8
+      },
+      {
+        "Fecha": "2026-07-28T08:10:23.4309402-05:00",
+        "NumeroMuestra": 4,
+        "Valor": 71.2
+      },
+      {
+        "Fecha": "2026-07-28T08:10:24.2356193-05:00",
+        "NumeroMuestra": 5,
+        "Valor": 70.6
+      },
+      {
+        "Fecha": "2026-07-28T08:10:25.0379854-05:00",
+        "NumeroMuestra": 6,
+        "Valor": 72.8
+      },
+      {
+        "Fecha": "2026-07-28T08:10:25.8524965-05:00",
+        "NumeroMuestra": 7,
+        "Valor": 70.6
+      }
+    ]
+  }
+]

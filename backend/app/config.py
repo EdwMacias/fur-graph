@@ -15,11 +15,29 @@ class Settings(BaseSettings):
     # Directorio donde se guardan los JSON crudos (montar como volumen en prod).
     data_dir: str = "./data"
 
+    # Directorio local donde la app emisora deja los FUR (frenos, suspensión,
+    # alineación, ruidos) para que este servicio los importe automáticamente.
+    buffer_dir: str = "/home/cedac/app/buffer_pruebas"
+
+    # Cada cuántos segundos se revisa `buffer_dir` en busca de archivos nuevos.
+    buffer_intervalo_seg: int = 15
+
     # Orígenes permitidos para CORS, separados por coma. "*" permite todos.
     cors_origins: str = "*"
 
     # Series más largas que este umbral se submuestrean antes de enviarlas.
     downsample_umbral: int = 1500
+
+    # Secreto para firmar la cookie de sesión (login con API key). Si se deja
+    # el valor por defecto, usa la propia API key — cámbialo en prod.
+    session_secret: str = ""
+
+    # Poner en True detrás de HTTPS para que la cookie de sesión solo viaje por TLS.
+    cookie_secure: bool = False
+
+    @property
+    def session_secret_efectivo(self) -> str:
+        return self.session_secret or self.api_key
 
     @property
     def cors_list(self) -> list[str]:

@@ -4,7 +4,8 @@ import axios from 'axios'
 // VITE_API_BASE al dominio de la API. Por defecto usa la misma raíz.
 const baseURL = import.meta.env.VITE_API_BASE || ''
 
-export const api = axios.create({ baseURL })
+// withCredentials: la cookie de sesión (fur_session) viaja en cada request.
+export const api = axios.create({ baseURL, withCredentials: true })
 
 export function listarPruebas(tipo) {
   const params = tipo ? { tipo } : {}
@@ -21,4 +22,16 @@ export function subirFur(file, apiKey) {
   return api
     .post('/api/pruebas', form, { headers: { 'X-API-Key': apiKey } })
     .then((r) => r.data)
+}
+
+export function estadoSesion() {
+  return api.get('/api/sesion').then((r) => r.data.autenticado)
+}
+
+export function iniciarSesion(apiKey) {
+  return api.post('/api/sesion', null, { headers: { 'X-API-Key': apiKey } }).then((r) => r.data)
+}
+
+export function cerrarSesion() {
+  return api.delete('/api/sesion').then((r) => r.data)
 }

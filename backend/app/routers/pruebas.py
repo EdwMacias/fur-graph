@@ -1,12 +1,11 @@
 import json
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import parsing, storage
+from .. import auth, importador, parsing, storage
 from ..config import settings
 from ..db import get_db
 from ..models import Prueba
@@ -20,13 +19,9 @@ def _verificar_api_key(x_api_key: str | None = Header(default=None)) -> None:
         raise HTTPException(status_code=401, detail="API key inválida o ausente")
 
 
-def _parsear_fecha(valor) -> datetime | None:
-    if not valor or not isinstance(valor, str):
-        return None
-    try:
-        return datetime.fromisoformat(valor)
-    except ValueError:
-        return None
+def _verificar_sesion(request: Request) -> None:
+    if not auth.token_valido(request.cookies.get(auth.COOKIE_NAME)):
+        raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
 
 
 @router.post("", response_model=IngestaOut, dependencies=[Depends(_verificar_api_key)])
@@ -64,7 +59,7 @@ async def ingestar(
         esquema=esquema,
         nombre_archivo=nombre,
         ruta_archivo=ruta,
-        fecha_prueba=_parsear_fecha(obj.get("Fecha")),
+        fecha_prueba=parsing.parsear_fecha(obj.get("Fecha")),
         bytes=len(contenido),
     )
     db.add(prueba)
@@ -73,7 +68,14 @@ async def ingestar(
     return IngestaOut(id=prueba.id, tipo=tipo, esquema=esquema)
 
 
-@router.get("", response_model=list[PruebaOut])
+@router.post("/importar", dependencies=[Depends(_verificar_api_key)])
+def importar():
+    """Fuerza una revisión inmediata de `buffer_dir` (normalmente corre sola cada
+    `buffer_intervalo_seg`)."""
+    return importador.escanear_buffer()
+
+
+@router.get("", response_model=list[PruebaOut], dependencies=[Depends(_verificar_sesion)])
 def listar(
     tipo: str | None = Query(default=None),
     limit: int = Query(default=100, le=500),
@@ -87,7 +89,7 @@ def listar(
     return db.scalars(stmt).all()
 
 
-@router.get("/{prueba_id}", response_model=PruebaOut)
+@router.get("/{prueba_id}", response_model=PruebaOut, dependencies=[Depends(_verificar_sesion)])
 def obtener(prueba_id: int, db: Session = Depends(get_db)):
     prueba = db.get(Prueba, prueba_id)
     if not prueba:
@@ -95,7 +97,7 @@ def obtener(prueba_id: int, db: Session = Depends(get_db)):
     return prueba
 
 
-@router.get("/{prueba_id}/datos")
+@router.get("/{prueba_id}/datos", dependencies=[Depends(_verificar_sesion)])
 def datos(prueba_id: int, db: Session = Depends(get_db)):
     """Devuelve los paneles/series/métricas listos para graficar (con downsampling)."""
     prueba = db.get(Prueba, prueba_id)
@@ -108,7 +110,7 @@ def datos(prueba_id: int, db: Session = Depends(get_db)):
     return parsing.normalizar(raw)
 
 
-@router.get("/{prueba_id}/raw")
+@router.get("/{prueba_id}/raw", dependencies=[Depends(_verificar_sesion)])
 def raw(prueba_id: int, db: Session = Depends(get_db)):
     prueba = db.get(Prueba, prueba_id)
     if not prueba:

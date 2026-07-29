@@ -25,16 +25,40 @@ listas para graficar (con submuestreo LTTB para las series densas de suspensión
 - **FRENOS viejo:** `PesosEjes.{PesosEje1,PesosEje2}`, `FuerzasEjes.{FuerzasEje1,FuerzasEje2}`.
 - **FRENOS nuevo:** split `_Izq`/`_Der` + `FuerzasAuxiliarEje2_*` (eficacia total y auxiliar).
 - **SUSPENSION:** `SuspensionEstatica/DinamicaEje1/2.{Izquierdo,Derecho}`.
+- **ALINEACION:** `BuffersEjes.{BufferAlineacionEje1,BufferAlineacionEje2}`.
+- **RUIDOS:** `BufferRuidoMotor`.
+
+## Autenticación
+
+Hay dos claves de acceso separadas que usan la misma `API_KEY`:
+
+- **Ingesta** (`POST /api/pruebas`, la app emisora): header `X-API-Key` en cada request.
+- **Visor** (todo lo que empieza con `GET /api/pruebas`): el frontend pide la API key una vez
+  en una pantalla de login (`POST /api/sesion`), que emite una cookie httponly firmada
+  (`fur_session`, 7 días). Las peticiones de lectura sin esa cookie responden 401.
+
+## Importación automática desde disco
+
+Además de recibir pruebas por `POST /api/pruebas`, la API revisa cada `BUFFER_INTERVALO_SEG`
+el directorio `BUFFER_DIR` (por defecto `/home/cedac/app/buffer_pruebas` en el servidor) en
+busca de archivos `.json` nuevos, uno por prueba (frenos, suspensión, alineación o ruidos). Cada
+archivo se detecta e importa igual que la ingesta HTTP y luego se mueve a `BUFFER_DIR/procesados`
+(o `BUFFER_DIR/errores` si el JSON no se reconoce), para no reimportarlo en la siguiente pasada.
+`POST /api/pruebas/importar` (con `X-API-Key`) fuerza una revisión inmediata sin esperar al ciclo.
 
 ## Endpoints
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | POST | `/api/pruebas` | Ingesta. Header `X-API-Key`. Acepta multipart `file` o JSON crudo en el body. |
-| GET | `/api/pruebas?tipo=&limit=&offset=` | Lista metadatos (más recientes primero). |
-| GET | `/api/pruebas/{id}` | Metadatos de una prueba. |
-| GET | `/api/pruebas/{id}/datos` | Paneles + series + métricas para graficar. |
-| GET | `/api/pruebas/{id}/raw` | Descarga el JSON original. |
+| POST | `/api/pruebas/importar` | Fuerza una revisión de `BUFFER_DIR`. Header `X-API-Key`. |
+| GET | `/api/pruebas?tipo=&limit=&offset=` | Lista metadatos (más recientes primero). Requiere sesión. |
+| GET | `/api/pruebas/{id}` | Metadatos de una prueba. Requiere sesión. |
+| GET | `/api/pruebas/{id}/datos` | Paneles + series + métricas para graficar. Requiere sesión. |
+| GET | `/api/pruebas/{id}/raw` | Descarga el JSON original. Requiere sesión. |
+| POST | `/api/sesion` | Login del visor. Header `X-API-Key`. Emite cookie `fur_session`. |
+| DELETE | `/api/sesion` | Cierra sesión (borra la cookie). |
+| GET | `/api/sesion` | `{"autenticado": bool}` según la cookie actual. |
 | GET | `/api/health` | Healthcheck. |
 
 Ejemplo de ingesta:
@@ -92,10 +116,14 @@ del compose y apunta `DATABASE_URL` a esa base.
 
 | Variable | Dónde | Descripción |
 |----------|-------|-------------|
-| `API_KEY` | api | Token exigido en `X-API-Key` para ingesta. |
+| `API_KEY` | api | Token exigido en `X-API-Key` para ingesta y para iniciar sesión en el visor. |
+| `SESSION_SECRET` | api | Firma la cookie de sesión. Vacío = usa `API_KEY`. |
+| `COOKIE_SECURE` | api | `true` si se sirve por HTTPS (recomendado en prod). |
 | `DATABASE_URL` | api | Cadena SQLAlchemy a Postgres (`postgresql+psycopg://...`). |
 | `DATA_DIR` | api | Directorio de los JSON crudos (volumen). |
-| `CORS_ORIGINS` | api | Orígenes permitidos, separados por coma (`*` = todos). |
+| `BUFFER_DIR` | api | Directorio del servidor que la app emisora usa para dejar los FUR. |
+| `BUFFER_INTERVALO_SEG` | api | Cada cuántos segundos se revisa `BUFFER_DIR` (def. 15). |
+| `CORS_ORIGINS` | api | Orígenes permitidos, separados por coma (`*` = todos; con cookies de sesión solo funciona igual-origen o con un dominio explícito). |
 | `DOWNSAMPLE_UMBRAL` | api | Máx. puntos por serie antes de submuestrear (def. 1500). |
 | `VITE_API_BASE` | web (build) | Dominio de la API para el frontend. Vacío si comparten host. |
 

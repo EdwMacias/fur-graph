@@ -55,8 +55,12 @@ Tres capas con una separación deliberada de responsabilidades:
 - `SuspensionDinamicaEje1`/`SuspensionEstaticaEje1` presentes → `SUSPENSION` / `n_a`
 - `FuerzasEjes.FuerzasEje1_Izq` → `FRENOS` / `nuevo` (split izq/der + `FuerzasAuxiliarEje2_*`)
 - `FuerzasEjes.FuerzasEje1` → `FRENOS` / `viejo`
+- `BuffersEjes` (con `BufferAlineacionEje1`/`BufferAlineacionEje2`) → `ALINEACION` / `n_a`
+- `BufferRuidoMotor` → `RUIDOS` / `n_a`
 
-Cualquier otra cosa lanza `ValueError` → HTTP 400 en la ingesta.
+Cualquier otra cosa lanza `ValueError` → HTTP 400 en la ingesta. ALINEACION y RUIDOS no tienen
+script de referencia en la raíz (a diferencia de FRENOS/SUSPENSION); sus normalizadores
+(`_alineacion`, `_ruidos` en `parsing.py`) solo calculan promedio/máximo simples.
 
 ### Paridad con los scripts de referencia
 
@@ -84,9 +88,20 @@ caché.
 
 - La ingesta acepta multipart (`file`) **o** el JSON crudo en el body, y desenvuelve arrays de un
   elemento (`data[0]`) — varios FUR llegan envueltos en una lista.
-- `X-API-Key` protege **solo** el POST de ingesta; los GET son públicos. La clave se compara con
-  `settings.api_key`.
-- El frontend pide la API key al usuario en `SubirFur.vue`; no se persiste.
+- `X-API-Key` (header) protege el POST de ingesta y `POST /api/pruebas/importar`; se compara con
+  `settings.api_key`. Los GET de `/api/pruebas*` requieren **sesión de navegador**: el frontend
+  llama `POST /api/sesion` con esa misma API key, que emite una cookie httponly firmada
+  (`fur_session`, ver `backend/app/auth.py`) — `_verificar_sesion` en `routers/pruebas.py` la
+  exige en cada GET. Son dos mecanismos separados sobre la misma clave; no confundirlos.
+- Además de la ingesta HTTP, `backend/app/importador.py` revisa `settings.buffer_dir` cada
+  `buffer_intervalo_seg` (bucle de fondo lanzado en el `lifespan` de `main.py`) e importa
+  cualquier `.json` nuevo con la misma lógica de `parsing.detectar` + `storage.guardar_json`,
+  moviendo el archivo a `procesados/` o `errores/` dentro de ese mismo directorio para no
+  reprocesarlo.
+- El frontend pide la API key en una pantalla de login (`LoginGate.vue`) antes de mostrar
+  cualquier vista; la key de esa pantalla no se persiste (solo la cookie de sesión que emite el
+  backend). `SubirFur.vue` sigue pidiendo la key por separado para el POST de ingesta manual —
+  no reutiliza la sesión.
 - `VITE_API_BASE` es **build-time** (se hornea en el bundle vía `ARG` del Dockerfile). Cambiarlo
   en producción exige rebuild del servicio `web`.
 - Si el archivo de datos falta en disco, `/datos` responde 410 (no 404, que significa "no existe

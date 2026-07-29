@@ -18,10 +18,16 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-fur}:${POSTGRES_PASSWORD:-fur}@db:5432/${POSTGRES_DB:-fur}
       API_KEY: ${API_KEY:-cambia-esta-clave}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       DATA_DIR: /data
+      BUFFER_DIR: /buffer_pruebas
+      BUFFER_INTERVALO_SEG: ${BUFFER_INTERVALO_SEG:-15}
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
     volumes:
       - fur_data:/data
+      # Directorio local del servidor donde la app emisora deja los FUR.
+      - /home/cedac/app/buffer_pruebas:/buffer_pruebas
     depends_on:
       db:
         condition: service_healthy

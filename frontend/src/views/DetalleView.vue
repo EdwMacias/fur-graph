@@ -10,6 +10,13 @@ const datos = ref(null)
 const error = ref('')
 const cargando = ref(true)
 
+const TITULOS = {
+  FRENOS: 'Prueba de Frenos',
+  SUSPENSION: 'Prueba de Suspensión',
+  ALINEACION: 'Prueba de Alineación',
+  RUIDOS: 'Prueba de Ruidos',
+}
+
 onMounted(async () => {
   try {
     datos.value = await obtenerDatos(props.id)
@@ -30,7 +37,7 @@ onMounted(async () => {
   <template v-else-if="datos">
     <div class="tarjeta">
       <h2 style="margin:0 0 4px">
-        {{ datos.tipo === 'FRENOS' ? 'Prueba de Frenos' : 'Prueba de Suspensión' }}
+        {{ TITULOS[datos.tipo] || datos.tipo }}
         <span class="muted">· IdPrueba {{ datos.id_prueba ?? '—' }} · esquema {{ datos.esquema }}</span>
       </h2>
       <PanelMetricas :metricas="datos.metricas" />

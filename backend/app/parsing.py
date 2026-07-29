@@ -25,10 +25,20 @@ Forma normalizada devuelta por `normalizar`:
 from __future__ import annotations
 
 import statistics
+from datetime import datetime
 
 from .config import settings
 
 TipoEsquema = tuple[str, str]
+
+
+def parsear_fecha(valor) -> datetime | None:
+    if not valor or not isinstance(valor, str):
+        return None
+    try:
+        return datetime.fromisoformat(valor)
+    except ValueError:
+        return None
 
 
 # --------------------------- utilidades base ---------------------------
@@ -148,7 +158,13 @@ def detectar(data: dict) -> TipoEsquema:
         if "FuerzasEje1" in fuerzas:
             return "FRENOS", "viejo"
 
-    raise ValueError("Esquema no reconocido (no es FRENOS ni SUSPENSION)")
+    if "BuffersEjes" in data:
+        return "ALINEACION", "n_a"
+
+    if "BufferRuidoMotor" in data:
+        return "RUIDOS", "n_a"
+
+    raise ValueError("Esquema no reconocido (no es FRENOS, SUSPENSION, ALINEACION ni RUIDOS)")
 
 
 # --------------------------- normalización FRENOS ---------------------------
@@ -309,12 +325,56 @@ def _suspension(data: dict) -> dict:
     return {"paneles": paneles, "metricas": metricas}
 
 
+# --------------------------- normalización ALINEACION ---------------------------
+
+def _alineacion(data: dict) -> dict:
+    buffers = data["BuffersEjes"]
+    paneles = []
+    metricas = {}
+    for eje, clave in (("Eje 1", "BufferAlineacionEje1"), ("Eje 2", "BufferAlineacionEje2")):
+        arr = buffers.get(clave)
+        if not arr:
+            continue
+        prom = promedio(arr)
+        metricas[f"{clave.lower()}_promedio"] = prom
+        paneles.append({
+            "titulo": f"Alineación {eje}",
+            "y_label": "Valor",
+            "series": [_serie("Alineación", arr)],
+            "lineas": [{"etiqueta": f"Promedio: {prom:.2f}", "valor": prom, "estilo": "promedio"}],
+            "marcadores": [],
+        })
+    return {"paneles": paneles, "metricas": metricas}
+
+
+# --------------------------- normalización RUIDOS ---------------------------
+
+def _ruidos(data: dict) -> dict:
+    arr = data["BufferRuidoMotor"]
+    prom = promedio(arr)
+    v_max, m_max = fuerza_maxima_abs(arr)
+    return {
+        "paneles": [{
+            "titulo": "Ruido de motor",
+            "y_label": "Nivel (dB)",
+            "series": [_serie("Ruido motor", arr)],
+            "lineas": [{"etiqueta": f"Promedio: {prom:.2f} dB", "valor": prom, "estilo": "promedio"}],
+            "marcadores": [{"muestra": m_max, "valor": v_max, "estilo": "maximo"}],
+        }],
+        "metricas": {"ruido_promedio": prom, "ruido_maximo": v_max},
+    }
+
+
 # --------------------------- entrada pública ---------------------------
 
 def normalizar(data: dict) -> dict:
     tipo, esquema = detectar(data)
     if tipo == "SUSPENSION":
         cuerpo = _suspension(data)
+    elif tipo == "ALINEACION":
+        cuerpo = _alineacion(data)
+    elif tipo == "RUIDOS":
+        cuerpo = _ruidos(data)
     elif esquema == "nuevo":
         cuerpo = _frenos_nuevo(data)
     else:

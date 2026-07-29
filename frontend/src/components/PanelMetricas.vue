@@ -27,6 +27,10 @@ const etiquetas = {
   peso_e2_desviacion: 'Peso Eje 2 (desv.)',
   fuerza_e1_maximo: 'Fuerza Eje 1 (máx)',
   fuerza_e2_maximo: 'Fuerza Eje 2 (máx)',
+  bufferalineacioneje1_promedio: 'Alineación Eje 1 (prom.)',
+  bufferalineacioneje2_promedio: 'Alineación Eje 2 (prom.)',
+  ruido_promedio: 'Ruido promedio',
+  ruido_maximo: 'Ruido máximo',
 }
 
 const destacadas = new Set(['eficacia_total', 'eficacia_auxiliar'])
