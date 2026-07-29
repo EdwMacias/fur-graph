@@ -26,6 +26,9 @@ async def _bucle_importador():
 async def lifespan(app: FastAPI):
     # Crea las tablas si no existen (suficiente para este esquema simple).
     Base.metadata.create_all(bind=engine)
+    # Deshace, una sola vez, el mover archivos a procesados/errores de una
+    # versión anterior del importador. No-op si esas carpetas no existen.
+    importador.migrar_carpetas_antiguas()
     tarea = asyncio.create_task(_bucle_importador())
     yield
     tarea.cancel()

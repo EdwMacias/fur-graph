@@ -78,7 +78,7 @@ button {
 button:disabled { opacity: 0.5; cursor: default; }
 button.secundario { background: transparent; color: var(--text); border: 1px solid var(--border); }
 
-input[type="text"], input[type="password"] {
+input[type="text"], input[type="password"], input[type="number"], select {
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 8px;

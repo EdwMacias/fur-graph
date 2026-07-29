@@ -7,8 +7,7 @@ const baseURL = import.meta.env.VITE_API_BASE || ''
 // withCredentials: la cookie de sesión (fur_session) viaja en cada request.
 export const api = axios.create({ baseURL, withCredentials: true })
 
-export function listarPruebas(tipo) {
-  const params = tipo ? { tipo } : {}
+export function listarPruebas(params = {}) {
   return api.get('/api/pruebas', { params }).then((r) => r.data)
 }
 

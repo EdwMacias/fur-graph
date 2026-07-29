@@ -42,9 +42,13 @@ Hay dos claves de acceso separadas que usan la misma `API_KEY`:
 Además de recibir pruebas por `POST /api/pruebas`, la API revisa cada `BUFFER_INTERVALO_SEG`
 el directorio `BUFFER_DIR` (por defecto `/home/cedac/app/buffer_pruebas` en el servidor) en
 busca de archivos `.json` nuevos, uno por prueba (frenos, suspensión, alineación o ruidos). Cada
-archivo se detecta e importa igual que la ingesta HTTP y luego se mueve a `BUFFER_DIR/procesados`
-(o `BUFFER_DIR/errores` si el JSON no se reconoce), para no reimportarlo en la siguiente pasada.
-`POST /api/pruebas/importar` (con `X-API-Key`) fuerza una revisión inmediata sin esperar al ciclo.
+archivo se detecta e importa igual que la ingesta HTTP.
+
+**`BUFFER_DIR` es de la aplicación emisora, no de este servicio: el importador solo lee ahí
+dentro, nunca mueve, renombra ni borra nada.** Para no reimportar un archivo en cada pasada,
+se registra su nombre en la tabla `archivos_importados` (Postgres) apenas se intenta importar,
+haya salido bien o mal — el archivo en disco no cambia. `POST /api/pruebas/importar` (con
+`X-API-Key`) fuerza una revisión inmediata sin esperar al ciclo.
 
 ## Endpoints
 

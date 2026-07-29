@@ -26,3 +26,20 @@ class Prueba(Base):
         DateTime(timezone=True), default=_ahora, index=True
     )
     bytes: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class ArchivoImportado(Base):
+    """Registro de qué archivos de `buffer_dir` ya se importaron, por nombre.
+
+    El importador NUNCA mueve ni renombra archivos dentro de `buffer_dir` — esa
+    carpeta la comparte la app emisora y su contenido no se toca. Para no
+    reprocesar un archivo en cada revisión, se guarda aquí su nombre en cuanto
+    se intenta importar (haya salido bien o mal).
+    """
+
+    __tablename__ = "archivos_importados"
+
+    nombre_archivo: Mapped[str] = mapped_column(String(255), primary_key=True)
+    estado: Mapped[str] = mapped_column(String(10))  # ok | error
+    detalle: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    procesado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_ahora)

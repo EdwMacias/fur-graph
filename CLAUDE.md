@@ -95,9 +95,13 @@ caché.
   exige en cada GET. Son dos mecanismos separados sobre la misma clave; no confundirlos.
 - Además de la ingesta HTTP, `backend/app/importador.py` revisa `settings.buffer_dir` cada
   `buffer_intervalo_seg` (bucle de fondo lanzado en el `lifespan` de `main.py`) e importa
-  cualquier `.json` nuevo con la misma lógica de `parsing.detectar` + `storage.guardar_json`,
-  moviendo el archivo a `procesados/` o `errores/` dentro de ese mismo directorio para no
-  reprocesarlo.
+  cualquier `.json` nuevo con la misma lógica de `parsing.detectar` + `storage.guardar_json`.
+  **`buffer_dir` es de la app emisora — el importador SOLO LEE ahí, nunca mueve ni renombra
+  nada.** La deduplicación (no reimportar el mismo archivo en cada pasada) se hace por nombre
+  en la tabla `archivos_importados`, no moviendo el archivo. (Una versión anterior sí movía los
+  archivos a `procesados/`/`errores/` y rompió el uso que la app emisora le daba a esa carpeta;
+  `importador.migrar_carpetas_antiguas()`, llamada una vez en cada arranque, deshace ese
+  movimiento si encuentra esas subcarpetas — no lo repitas.)
 - El frontend pide la API key en una pantalla de login (`LoginGate.vue`) antes de mostrar
   cualquier vista; la key de esa pantalla no se persiste (solo la cookie de sesión que emite el
   backend). `SubirFur.vue` sigue pidiendo la key por separado para el POST de ingesta manual —

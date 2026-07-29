@@ -78,13 +78,16 @@ def importar():
 @router.get("", response_model=list[PruebaOut], dependencies=[Depends(_verificar_sesion)])
 def listar(
     tipo: str | None = Query(default=None),
-    limit: int = Query(default=100, le=500),
+    id_prueba: int | None = Query(default=None),
+    limit: int = Query(default=100, le=2000),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
     stmt = select(Prueba).order_by(Prueba.recibido_en.desc())
     if tipo:
         stmt = stmt.where(Prueba.tipo == tipo.upper())
+    if id_prueba is not None:
+        stmt = stmt.where(Prueba.id_prueba == id_prueba)
     stmt = stmt.limit(limit).offset(offset)
     return db.scalars(stmt).all()
 
