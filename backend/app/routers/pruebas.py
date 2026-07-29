@@ -83,7 +83,9 @@ def listar(
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
-    stmt = select(Prueba).order_by(Prueba.recibido_en.desc(), Prueba.id.desc())
+    stmt = select(Prueba).order_by(
+        Prueba.id_prueba.desc().nulls_last(), Prueba.recibido_en.desc(), Prueba.id.desc()
+    )
     if tipo:
         stmt = stmt.where(Prueba.tipo == tipo.upper())
     if id_prueba is not None:
